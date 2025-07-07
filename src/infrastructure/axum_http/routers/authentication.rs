@@ -1,10 +1,18 @@
 use std::sync::Arc;
 
-use axum::{Json, Router, extract::State, response::IntoResponse, routing::post};
-use axum_extra::extract::CookieJar;
+use axum::{
+    Json, Router,
+    extract::State,
+    http::{HeaderMap, HeaderValue, StatusCode, header},
+    response::IntoResponse,
+    routing::post,
+};
+use axum_extra::extract::cookie::{Cookie, CookieJar};
+use cookie::time::Duration;
 
 use crate::{
     application::usecases::authentication::AuthenticationUseCase,
+    config::{config_loader::get_stage, stage::Stage},
     domain::repositories::{
         adventurers::AdventurersRepository, guild_commanders::GuildCommandersRepository,
     },
@@ -49,7 +57,39 @@ where
     T1: AdventurersRepository + Send + Sync,
     T2: GuildCommandersRepository + Send + Sync,
 {
-    // unimplemented!()
+    match authentication_use_case.adventurers_login(login_model).await {
+        Ok(passport) => {
+            let mut act_cookie = Cookie::build(("act", passport.access_token.clone()))
+                .path("/")
+                .same_site(cookie::SameSite::Lax)
+                .http_only(true)
+                .max_age(Duration::days(14));
+
+            let mut rft_cookie = Cookie::build(("rft", passport.refresh_token.clone()))
+                .path("/")
+                .same_site(cookie::SameSite::Lax)
+                .http_only(true)
+                .max_age(Duration::days(14));
+
+            if get_stage() == Stage::Production {
+                act_cookie = act_cookie.secure(true);
+                rft_cookie = rft_cookie.secure(true);
+            }
+
+            let mut headers = HeaderMap::new();
+            headers.append(
+                header::SET_COOKIE,
+                HeaderValue::from_str(&act_cookie.to_string()).unwrap(),
+            );
+            headers.append(
+                header::SET_COOKIE,
+                HeaderValue::from_str(&rft_cookie.to_string()).unwrap(),
+            );
+
+            (StatusCode::OK, headers, "Login successfully").into_response()
+        }
+        Err(e) => (StatusCode::UNAUTHORIZED, e.to_string()).into_response(),
+    }
 }
 
 pub async fn adventurers_refresh_token<T1, T2>(
@@ -71,7 +111,42 @@ where
     T1: AdventurersRepository + Send + Sync,
     T2: GuildCommandersRepository + Send + Sync,
 {
-    // unimplemented!()
+    match authentication_use_case
+        .guild_commanders_login(login_model)
+        .await
+    {
+        Ok(passport) => {
+            let mut act_cookie = Cookie::build(("act", passport.access_token.clone()))
+                .path("/")
+                .same_site(cookie::SameSite::Lax)
+                .http_only(true)
+                .max_age(Duration::days(14));
+
+            let mut rft_cookie = Cookie::build(("rft", passport.refresh_token.clone()))
+                .path("/")
+                .same_site(cookie::SameSite::Lax)
+                .http_only(true)
+                .max_age(Duration::days(14));
+
+            if get_stage() == Stage::Production {
+                act_cookie = act_cookie.secure(true);
+                rft_cookie = rft_cookie.secure(true);
+            }
+
+            let mut headers = HeaderMap::new();
+            headers.append(
+                header::SET_COOKIE,
+                HeaderValue::from_str(&act_cookie.to_string()).unwrap(),
+            );
+            headers.append(
+                header::SET_COOKIE,
+                HeaderValue::from_str(&rft_cookie.to_string()).unwrap(),
+            );
+
+            (StatusCode::OK, headers, "Login successfully").into_response()
+        }
+        Err(e) => (StatusCode::UNAUTHORIZED, e.to_string()).into_response(),
+    }
 }
 
 pub async fn guild_commanders_refresh_token<T1, T2>(
