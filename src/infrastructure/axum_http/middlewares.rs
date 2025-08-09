@@ -59,7 +59,7 @@ pub async fn guild_commanders_authorization(
 }
 
 fn get_cookie_value(cookie_header: &str, key: &str) -> Option<String> {
-    cookie_header.split(", ").find_map(|cookie| {
+    cookie_header.split("; ").find_map(|cookie| {
         let mut parts = cookie.splitn(2, "=");
         let name = parts.next()?.trim();
         let value = parts.next()?.trim();
