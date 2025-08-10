@@ -1,8 +1,9 @@
 use std::sync::Arc;
 
 use axum::{
-    Router,
+    Json, Router,
     extract::{Path, Query, State},
+    http::StatusCode,
     response::IntoResponse,
     routing::get,
 };
@@ -11,7 +12,7 @@ use crate::{
     application::usecases::quest_viewing::QuestViewingUseCase,
     domain::{
         repositories::quest_viewing::QuestViewingRepository,
-        value_objects::board_checking_filter::BoardCheckingFilter,
+        value_objects::{board_checking_filter::BoardCheckingFilter, quest_model},
     },
     infrastructure::postgres::{
         postgres_connection::PgPoolSquad, repositories::quest_viewing::QuestViewingPostgres,
@@ -35,7 +36,10 @@ pub async fn view_details<T>(
 where
     T: QuestViewingRepository + Send + Sync,
 {
-    // unimplemented!()
+    match quest_viewing_use_case.view_details(quest_id).await {
+        Ok(quest_model) => (StatusCode::OK, Json(quest_model)).into_response(),
+        Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()).into_response(),
+    }
 }
 
 pub async fn board_checking<T>(
@@ -45,5 +49,8 @@ pub async fn board_checking<T>(
 where
     T: QuestViewingRepository + Send + Sync,
 {
-    // unimplemented!()
+    match quest_viewing_use_case.board_checking(&filter).await {
+        Ok(quests_model) => (StatusCode::OK, Json(quests_model)).into_response(),
+        Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()).into_response(),
+    }
 }
