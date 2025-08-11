@@ -1,4 +1,5 @@
 pub mod adventurers;
+pub mod adventurers_test;
 pub mod authentication;
 pub mod crew_switchboard;
 pub mod guild_commanders;
