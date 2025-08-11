@@ -12,7 +12,7 @@ use crate::{
     application::usecases::quest_viewing::QuestViewingUseCase,
     domain::{
         repositories::quest_viewing::QuestViewingRepository,
-        value_objects::{board_checking_filter::BoardCheckingFilter, quest_model},
+        value_objects::board_checking_filter::BoardCheckingFilter,
     },
     infrastructure::postgres::{
         postgres_connection::PgPoolSquad, repositories::quest_viewing::QuestViewingPostgres,
